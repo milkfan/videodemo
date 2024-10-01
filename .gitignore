@@ -1,0 +1,7 @@
+venv
+.DS_Store
+*.txt
+model_image
+model_video
+*.idea/
+__pycache__/
