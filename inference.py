@@ -173,10 +173,10 @@ class llm():
         )
         return answer
     
-    def vllm(self,prompt, frames_list, vlength):
+    def vllm(self,prompt, frames_list, vlength,threshold=10,skipframe=10):
         l = len(frames_list)
         per_frame = vlength / l  # 每帧对应的秒数
-        step = 10  # 每10秒检测一次
+        step = int(skipframe)  # 每10秒检测一次
         yes_segments = []  # 存储YES段的时间区间
         current_segment_start = None  # 记录当前YES段的开始时间
         temperature = 0.5
@@ -217,7 +217,7 @@ class llm():
                         lp += 1  # 继续向前扩展
                     else:
                         break
-                if lp * per_frame - current_segment_start>10:
+                if lp * per_frame - current_segment_start>threshold:
                     # 记录YES段的结束时间
                     yes_segments.append((current_segment_start, lp * per_frame))
                 current_segment_start = None  # 重置段开始时间
@@ -245,8 +245,8 @@ class llm():
         f = open("./progress.txt","w+")
         f.write(str(1))
         f.close()        
-        return resp    
-    def predict(self,prompt, video_data, temperature):
+        return yes_segments
+    def predict(self,prompt, video_data, threshold,skipframe):
         
 
         video_data,vlength = encode_video(video_data)
@@ -272,7 +272,7 @@ class llm():
             pass
             # detect_model()
         elif task == 2:
-            resp = self.vllm(prompt,video_data,vlength)
+            resp = self.vllm(prompt,video_data,vlength,threshold,skipframe)
         else:
            resp = "请重新描述"
         return resp

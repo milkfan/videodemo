@@ -1,7 +1,28 @@
 import gradio as gr
 import requests
+import os
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 
+# 假设我们有一个函数来处理视频并生成片段
+def process_video(video_path, time_segments):
+    # 打开视频文件
+    video = VideoFileClip(video_path)
 
+    # 生成片段
+    segments = []
+    for segment_start,segment_end in time_segments:
+        # 格式化时间戳
+        start_timestamp = f"{int(segment_start // 60)}分{int(segment_start % 60)}秒"
+        end_timestamp = f"{int(segment_end // 60)}分{int(segment_end % 60)}秒"
+
+        # 创建视频片段
+        segment_end = min(segment_end,video.duration)
+        segment = video.subclip(segment_start, segment_end)
+        segment_path = f'./outputs/{start_timestamp}到{end_timestamp}.mp4'
+        segment.write_videofile(segment_path, codec='libx264', audio=False)
+        segments.append(segment_path)
+
+    return segments
 
 def load_video_data(video_path):
     with open(video_path, 'rb') as file:
@@ -13,11 +34,11 @@ class ChatAgent:
     def __init__(self):
         pass
 
-    def answer(self, video_path, prompt, max_new_tokens, num_beams, temperature):
+    def answer(self, video_path, prompt, max_new_tokens, threshold,skipframe):
         url = 'http://127.0.0.1:5000/video_qa'
         print(video_path)
         files = {'video': open(video_path, 'rb')}
-        data = {'question': prompt, 'temperature': temperature}
+        data = {'question': prompt, 'threshold': threshold,'skipframe':skipframe}
         response = requests.post(url, files=files, data=data)
         if response.status_code != 200:
             return f"Something went wrong: {response.text}"
@@ -63,14 +84,13 @@ def gradio_ask(user_message, chatbot):
     # print(f"Question: {chatbot[-1][0]} Answer: {response}")
     # chatbot[-1][1] = response
     # return chatbot
-def gradio_answer(video_path, chatbot, num_beams, temperature):
-    if len(chatbot) == 0 or video_path is None:
-        return chatbot
-
-    response = agent.answer(video_path=video_path, prompt=chatbot, max_new_tokens=200, num_beams=num_beams,
-                            temperature=temperature)
-    print(f"Question: {chatbot} Answer: {response}")
-    return response
+def gradio_answer(video_path, option, threshold, skipframe):
+    if len(option) == 0 or video_path is None:
+        return option
+    response = agent.answer(video_path=video_path, prompt=option, max_new_tokens=200, threshold=threshold,skipframe=skipframe)
+    print(f"Question: {option} Answer: {response}")
+    seg = process_video(video_path,response)
+    return seg
 import time
 
 # def process_with_progress_bar(progress=gr.Progress()):
@@ -93,21 +113,21 @@ def main():
                     up_video = gr.Video(interactive=True, include_audio=True, elem_id="video_upload", height=360, format="mp4")
 
                 upload_button = gr.Button(value="Upload & Start Chat", interactive=True, variant="primary")
-                temperature = gr.Slider(
-                    minimum=0.1,
-                    maximum=1.0,
-                    value=0.1,
-                    step=0.1,
-                    interactive=True,
-                    label="Temperature",
-                )
-                num_beams = gr.Slider(
+                threshold = gr.Slider(
                     minimum=1,
-                    maximum=5,
+                    maximum=20,
                     value=1,
                     step=1,
                     interactive=True,
-                    label="beam search numbers",
+                    label="阈值（秒）",
+                )
+                skipframe = gr.Slider(
+                    minimum=1,
+                    maximum=20,
+                    value=1,
+                    step=1,
+                    interactive=True,
+                    label="检测频率（秒/次）",
                 )
             bar = gr.Progress(track_tqdm=True)
             def process_data():
@@ -128,7 +148,7 @@ def main():
                 return "当前进度: 100%"
                 
             with gr.Column(visible=True) as input_raws:
-                output_text = gr.Textbox(label="检测结果", interactive=False)
+                output_videos = gr.Files(label="输出视频片段")
                 progress_output = gr.Textbox(label="Progress", interactive=False)
                 with gr.Row():
                     with gr.Column(scale=0.5):
@@ -139,9 +159,9 @@ def main():
                     with gr.Column(scale=0.15, min_width=0):
                         clear = gr.Button("🔄Clear")
             upload_button.click(upload_video, [up_video], [up_video, upload_button])     
-            run.click(gradio_answer, [up_video,option,num_beams,temperature], [output_text])
+            run.click(gradio_answer, [up_video,option,threshold,skipframe], [output_videos])
             run.click(fn=process_data, inputs=[], outputs = progress_output)
-            clear.click(gradio_reset, [],[output_text,progress_output, up_video, upload_button], queue=False)   
+            clear.click(gradio_reset, [],[output_videos,progress_output, up_video, upload_button], queue=False)   
             # with gr.Column(visible=True) as input_raws:
                 # chatbot = gr.Chatbot(elem_id="chatbot", label='VideoHub')
                 # with gr.Row():
