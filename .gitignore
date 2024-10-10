@@ -5,3 +5,4 @@ model_image
 model_video
 *.idea/
 __pycache__/
+outputs/
