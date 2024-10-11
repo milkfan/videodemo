@@ -10,6 +10,8 @@ from transformers import AutoModel, AutoTokenizer
 from decord import VideoReader, cpu    # pip install decord
 import re
 import time
+import pickle
+
 MODEL_PATH = "openbmb/MiniCPM-V-2_6-int4"
 
 # #最大帧数
@@ -23,11 +25,6 @@ parser.add_argument('--quant', type=int, choices=[4, 8], help='Enable 4-bit or 8
 args = parser.parse_args([])
 
 
-
-
-
-import pickle
-import time
 #视频编码
 def encode_video(video_data):
     def uniform_sample(l, n):
@@ -56,50 +53,6 @@ def extract_res(resp):
     pattern = r"(\d+)"
     type_ids = re.findall(pattern, resp)
     return int(type_ids[0])
-
-# def vllm(prompt,frames_list,vlength):
-    # l = len(frames_list)
-    # per_frame = vlength/l
-    # ans = []
-    # res = []
-    # t1 = time.time()
-    # lp = 0
-    # rp = 10
-    # mode = 0
-    # while lp < l:
-        # prompt = f""" 
-        # 下面有任务你需要回答：
-        # task:{prompt}
-        # 只需要按下面的格式输出，不需要输出其它内容：
-        # {{
-        # 'result':"Yes or No"
-        # }}
-        # """
-        # tmp = model_predict(prompt, [frames_list[lp]], 0.8)
-        # print(lp,rp)
-        # if "Yes" in tmp or "yes" in tmp:
-            # res.append(int(lp))
-            # if mode == 0:
-                # mode = 1
-                # lp = lp - 10
-            # lp += 2
-            # if lp >= rp:
-                # rp += 10
-        # else:
-            # mode = 0
-            # lp = rp
-            # rp += 10
-        # torch.cuda.empty_cache()
-    # # print(res)
-    # resp = "没有出现该行为"
-    # res.sorted()
-    # res = []
-    # if res:
-        # resp = f"在 {','.join(res)} s出现该行为"
-    # print(time.time()-t1,resp)
-    # return resp
-
-
 
 class llm():
     def __init__(self):
@@ -159,11 +112,7 @@ class llm():
             "do_sample":True
         }
         msgs = [{'role': 'user', 'content': video_data + [query]}]
-        # msgs = [
-        #     {'role': 'user', 'content': [image1, question]}, {'role': 'assistant', 'content': [answer1]},
-        #     {'role': 'user', 'content': [image2, question]}, {'role': 'assistant', 'content': [answer2]},
-        #     {'role': 'user', 'content': [image_test, question]}
-        # ]
+
         # Set decode params for video
         answer = self.model.chat(
             image=None,
