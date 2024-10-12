@@ -124,7 +124,7 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
                         value=1,
                         step=1,
                         interactive=True,
-                        label="检测频率（次/秒）",
+                        label="检测间隔（秒/次）",
                     )
 
             with gr.Row():
