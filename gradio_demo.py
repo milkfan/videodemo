@@ -11,7 +11,7 @@ class ChatAgent:
         pass
 
     def answer(self, video_path, prompt, max_new_tokens, threshold,skipframe):
-        url = 'http://127.0.0.1:5000/video_qa'
+        url = 'http://localhost:5000/video_qa'
         print(video_path)
         files = {'video': open(video_path, 'rb')}
         data = {'question': prompt, 'threshold': threshold,'skipframe':skipframe}
@@ -61,67 +61,75 @@ def gradio_answer(video_path, option, threshold, skipframe):
 
 agent = ChatAgent()
 
-def main():
-    with gr.Blocks(title="VideoHub",
-                   css="#chatbot {overflow:auto; height:500px;} #InputVideo {overflow:visible; height:320px;} footer {visibility: none}") as demo:
-        with gr.Row():            
-            with gr.Column(scale=0.5, visible=True) as video_upload:
-                with gr.Tab("视频", elem_id='video_tab'):
-                    up_video = gr.Video(interactive=True, include_audio=True, elem_id="video_upload", height=360, format="mp4")
 
-                upload_button = gr.Button(value="上传视频并检测", interactive=True, variant="primary")
-                threshold = gr.Slider(
-                    minimum=1,
-                    maximum=20,
-                    value=1,
-                    step=1,
-                    interactive=True,
-                    label="阈值（秒）",
-                )
-                skipframe = gr.Slider(
-                    minimum=1,
-                    maximum=20,
-                    value=1,
-                    step=1,
-                    interactive=True,
-                    label="检测频率（秒/次）",
-                )
-            bar = gr.Progress(track_tqdm=True)
-            def process_data():
-                f = open("./progress.txt","w+")
-                f.write(str(0))
-                f.close()
-                progress = 0
+with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; height:500px;} #InputVideo {overflow:visible; height:320px;} footer {visibility: none}") as my_demo:
+    with gr.Row(): 
+        # 左边上传视频         
+        with gr.Column(scale=2, visible=True) as video_upload:
+            with gr.Tab("视频", elem_id='video_tab'):
+                # 只有mp4格式才能支持实时的视频捕获
+                up_video = gr.Video(interactive=True, include_audio=True, elem_id="video_upload", height=360, format="mp4") 
+
+            upload_button = gr.Button(value="上传视频", interactive=True, variant="primary")
+
+        upload_button.click(upload_video, [up_video], [up_video, upload_button])     
+
+        # 右边检测视频    
+        with gr.Column(scale=3, visible=True) as video_detect:
+            with gr.Row():
+                with gr.Column(scale=1, min_width=300):
+                    threshold = gr.Slider(
+                        minimum=1,
+                        maximum=20,
+                        value=5,
+                        step=1,
+                        interactive=True,
+                        label="视频片段最小长度（秒）",
+                    )
+
+                with gr.Column(scale=1, min_width=300):
+                    skipframe = gr.Slider(
+                        minimum=1,
+                        maximum=20,
+                        value=1,
+                        step=1,
+                        interactive=True,
+                        label="检测频率（次/秒）",
+                    )
+
+            with gr.Row():
+                with gr.Column(scale=1, min_width=300):
+                    option = gr.Dropdown(choices=["检测是否使用手机", "检测是否坐下"], label="选择检测类型", interactive=True)
+                with gr.Column(scale=1, min_width=300):
+                    run = gr.Button("💭开始检测")
+                    clear = gr.Button("🔄清空")
+
+            progress_output = gr.Textbox(label="视频处理进度", interactive=False)
+            output_videos = gr.Files(label="输出视频片段")
+
+        bar = gr.Progress(track_tqdm=True)
+        def process_data():
+            f = open("./progress.txt","w+")
+            f.write(str(0))
+            f.close()
+            progress = 0
+            bar(progress)
+            while progress < 0.9999:
+                # 间歇1秒
+                time.sleep(1)
+                try:
+                    f = open("./progress.txt","r")
+                    progress = float(f.read())
+                    f.close()
+                except:
+                    pass
                 bar(progress)
-                while progress < 0.9999:
-                    time.sleep(1)
-                    try:
-                        f = open("./progress.txt","r")
-                        progress = float(f.read())
-                        f.close()
-                    except:
-                        pass
-                    bar(progress)
-                return "当前进度: 100%"
-                
-            with gr.Column(visible=True) as input_raws:
-                output_videos = gr.Files(label="输出视频片段")
-                progress_output = gr.Textbox(label="Progress", interactive=False)
-                with gr.Row():
-                    with gr.Column(scale=0.5):
-                        option = gr.Dropdown(choices=["检测是否使用手机", "检测是否坐下"], label="选择检测类型", interactive=True)
+            return "当前进度: 100%"
 
-                    with gr.Column(scale=0.15):
-                        run = gr.Button("💭开始检测")
-                    with gr.Column(scale=0.15, min_width=0):
-                        clear = gr.Button("🔄清空")
-            upload_button.click(upload_video, [up_video], [up_video, upload_button])     
-            run.click(gradio_answer, [up_video,option,threshold,skipframe], [output_videos])
-            run.click(fn=process_data, inputs=[], outputs = progress_output)
-            clear.click(gradio_reset, [],[output_videos,progress_output, up_video, upload_button], queue=False)  
-    
-    demo.launch(share=True,server_name="0.0.0.0", server_port=7868)
+        run.click(gradio_answer, [up_video,option,threshold,skipframe], [output_videos])
+        run.click(fn=process_data, inputs=[], outputs = progress_output)
+        clear.click(gradio_reset, [], [output_videos, progress_output, up_video, upload_button], queue=False)  
 
 
 if __name__ == '__main__':
-    main()
+    my_demo.launch(share=True,server_name="0.0.0.0", server_port=7868)
