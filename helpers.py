@@ -1,4 +1,6 @@
 from moviepy.editor import VideoFileClip, concatenate_videoclips
+from inference import llm
+
 
 # 处理视频并生成片段
 def process_video(video_path, time_segments):
