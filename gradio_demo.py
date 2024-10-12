@@ -44,11 +44,16 @@ def upload_video(gr_video):
         )
 
 def gradio_answer(video_path, option, threshold, skipframe):
+    '''
+    视频检测
+    '''
     if len(option) == 0 or video_path is None:
         return option
     response = agent.answer(video_path=video_path, prompt=option, max_new_tokens=200, threshold=threshold, skipframe=skipframe)
     print(f"Question: {option} Answer: {response}")
-    seg = process_video(video_path,response)
+
+    # 根据大模型返回的结果，生成视频切片
+    seg = process_video(video_path, response)
     return seg
 
 def gradio_reset():

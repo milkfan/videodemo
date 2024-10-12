@@ -27,18 +27,18 @@ def video_qa():
 
     if 'threshold' not in request.form:
         threshold = 1
-        print("No threshold found, use default value 0.001")
+        print("No threshold found, use default value 1")
     else:
         threshold = float(request.form['threshold'])
         print("Get threshold:", threshold)
     if 'skipframe' not in request.form:
-        skipframe = 1
-        print("No skipframe found, use default value 0.001")
+        skipframe = 10
+        print("No skipframe found, use default value 10")
     else:
         skipframe = float(request.form['skipframe'])
         print("Get skipframe:", skipframe)
     try:
-        answer = model.predict(prompt=question, video_data=video.read(), threshold=threshold,skipframe=skipframe)
+        answer = model.predict(prompt=question, video_data=video.read(), threshold=threshold, skipframe=skipframe)
         return jsonify(
             {"answer": answer})
     except:

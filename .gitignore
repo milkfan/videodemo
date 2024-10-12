@@ -7,3 +7,5 @@ model_video
 __pycache__/
 outputs/
 model/
+.ipynb_checkpoints/
+*.ipynb

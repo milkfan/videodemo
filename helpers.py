@@ -1,9 +1,17 @@
 from moviepy.editor import VideoFileClip, concatenate_videoclips
+import os
 from inference import llm
 
 
-# 处理视频并生成片段
 def process_video(video_path, time_segments):
+    '''
+    处理视频并生成片段
+    '''
+    # 创建剪辑视频目录
+    output_dir = './outputs'
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     # 打开视频文件
     video = VideoFileClip(video_path)
 
@@ -17,7 +25,7 @@ def process_video(video_path, time_segments):
         # 创建视频片段
         segment_end = min(segment_end,video.duration)
         segment = video.subclip(segment_start, segment_end)
-        segment_path = f'./outputs/{start_timestamp}-{end_timestamp}.mp4'
+        segment_path = f'{output_dir}/{start_timestamp}-{end_timestamp}.mp4'
         segment.write_videofile(segment_path, codec='libx264', audio=False)
         segments.append(segment_path)
 

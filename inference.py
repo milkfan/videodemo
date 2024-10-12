@@ -122,7 +122,7 @@ class llm():
         )
         return answer
     
-    def vllm(self,prompt, frames_list, vlength,threshold=10,skipframe=10):
+    def vllm(self, prompt, frames_list, vlength, threshold=10, skipframe=10):
         l = len(frames_list)
         per_frame = vlength / l  # 每帧对应的秒数
         step = int(skipframe)  # 每10秒检测一次
@@ -195,8 +195,9 @@ class llm():
         f.write(str(1))
         f.close()        
         return yes_segments
-    def predict(self,prompt, video_data, threshold,skipframe):
-        
+
+
+    def predict(self, prompt, video_data, threshold,skipframe):   
 
         video_data,vlength = encode_video(video_data)
         # question = "请判断是否出现写字教学的情况"
@@ -218,8 +219,7 @@ class llm():
         task = extract_res(tmp)
         torch.cuda.empty_cache()
         if task == 1:
-            pass
-            # detect_model()
+            resp = "统计类任务尚未开发"
         elif task == 2:
             resp = self.vllm(prompt,video_data,vlength,threshold,skipframe)
         else:
