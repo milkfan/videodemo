@@ -43,14 +43,6 @@ def upload_video(gr_video):
             gr.update(value="开始检测", interactive=True)
         )
 
-
-def gradio_ask(user_message, chatbot):
-    if len(user_message) == 0:
-        return gr.update(interactive=True, placeholder='Input should not be empty!'), chatbot
-    chatbot = chatbot + [[user_message, None]]
-    return '', chatbot
-
-
 def gradio_answer(video_path, option, threshold, skipframe):
     if len(option) == 0 or video_path is None:
         return option
