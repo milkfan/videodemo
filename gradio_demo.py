@@ -108,7 +108,7 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
                     threshold = gr.Slider(
                         minimum=1,
                         maximum=20,
-                        value=5,
+                        value=3,
                         step=1,
                         interactive=True,
                         label="视频片段最小长度（秒）",
@@ -118,7 +118,7 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
                     skipframe = gr.Slider(
                         minimum=1,
                         maximum=20,
-                        value=1,
+                        value=5,
                         step=1,
                         interactive=True,
                         label="检测间隔（秒/次）",

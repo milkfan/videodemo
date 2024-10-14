@@ -1,12 +1,9 @@
 import io
 import numpy as np
-import torch
-from decord import cpu, VideoReader, bridge
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, AutoModel
 import argparse
 import torch
 from PIL import Image
-from transformers import AutoModel, AutoTokenizer
 from decord import VideoReader, cpu    # pip install decord
 import re
 import time
@@ -48,17 +45,12 @@ def encode_video(video_data):
     return frames,vlength
 
 
-
-def extract_res(resp):
-    pattern = r"(\d+)"
-    type_ids = re.findall(pattern, resp)
-    return int(type_ids[0])
-
 class llm():
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained(
             MODEL_PATH,
             trust_remote_code=True,
+            local_files_only=True
             # padding_side="left"
         )
         # Load the model
@@ -95,7 +87,7 @@ class llm():
                 trust_remote_code=True
             ).eval().to(DEVICE)
     
-    def model_predict(self,prompt, video_data, temperature):
+    def model_predict(self, prompt, video_data, temperature):
         strategy = 'chat'
 
         history = []
@@ -202,22 +194,27 @@ class llm():
         video_data,vlength = encode_video(video_data)
         # question = "请判断是否出现写字教学的情况"
         prompt2model = f""" 
-        ###下面有2类任务：
-        type1:统计类任务，你需要根据问题统计数量
-        type2:行为判断任务，你需要判断是否出现该行为
-        你需要判断问题属于哪一类任务。      
-        只需要按下面的格式输出，不需要输出其它内容：
-        {{
-        'type': 1 or 2
-        }}
-        ###下面开始
-        问题：{prompt}
-        回答：
+            ###下面有2类任务：
+            type1:统计类任务，你需要根据问题统计数量
+            type2:行为判断任务，你需要判断是否出现该行为
+            你需要判断问题属于哪一类任务。      
+            只需要按下面的格式输出，不需要输出其它内容：
+            {{
+            'type': 1 or 2
+            }}
+            ###下面开始
+            问题：{prompt}
+            回答：
         """
-        tmp = self.model_predict(prompt2model, [], 0.8)
-        print(tmp)
-        task = extract_res(tmp)
+        task_type_prediction = self.model_predict(prompt2model, [], 0.8)
         torch.cuda.empty_cache()
+        print(f"Task predicted: {task_type_prediction}")        
+
+        def extract_res(resp):
+            pattern = r"(\d+)"
+            type_ids = re.findall(pattern, resp)
+            return int(type_ids[0])
+        task = extract_res(task_type_prediction)
         if task == 1:
             resp = "统计类任务尚未开发"
         elif task == 2:
