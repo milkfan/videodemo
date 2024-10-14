@@ -131,7 +131,7 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
                     run_button = gr.Button("💭开始检测", interactive=False)
                     clear_button = gr.Button("🔄清空")
             
-            progress_output = gr.Textbox(label="视频处理进度", interactive=False)
+            progress_output = gr.Textbox(label="视频检测进度", interactive=False)
             output_videos = gr.Files(label="视频检测结果", height=200)
 
 
@@ -143,6 +143,21 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
         run_button.click(fn=process_data, inputs=[], outputs = progress_output)
         clear_button.click(gradio_reset, [], [output_videos, progress_output, up_video, upload_button, run_button], queue=False)  
 
+    gr.Markdown("#### 检测出的视频片段")
+    with gr.Row():    
+        @gr.render(inputs=output_videos)
+        def display_videos(videos):
+            if videos and len(videos) != 0:
+                num = len(videos)
+                left = (3 - num % 3) % 3
+                print(f"Padding:{left}")
+                for video in videos:
+                    print(video)
+                    with gr.Column(scale=1, min_width=300):
+                        gr.PlayableVideo(value=video, label=f"{video.split('/')[-1]}", height=200)
+                for i in range(left):
+                    with gr.Column(scale=1, min_width=300):
+                        gr.Markdown("")
 
 if __name__ == '__main__':
     my_demo.launch(share=True,server_name="0.0.0.0", server_port=7868)
