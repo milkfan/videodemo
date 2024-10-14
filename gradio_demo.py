@@ -132,7 +132,7 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
                     clear_button = gr.Button("🔄清空")
             
             progress_output = gr.Textbox(label="视频处理进度", interactive=False)
-            output_videos = gr.Files(label="输出视频片段", height=200)
+            output_videos = gr.Files(label="视频检测结果", height=200)
 
 
         # 左侧组件交互
