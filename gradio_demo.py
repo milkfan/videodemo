@@ -54,7 +54,7 @@ def gradio_answer(video_path, option, threshold, skipframe):
 
     # 根据大模型返回的结果，生成视频切片
     seg = process_video(video_path, response)
-    return seg
+    return seg, gr.update(interactive=True), gr.update(interactive=True)
 
 def gradio_reset():
     '''
@@ -89,6 +89,12 @@ def process_data():
             pass
         bar(progress)
     return "当前进度: 100%"
+
+def clear_answer():
+    '''
+    清空上一次检测结果，用于连续检测
+    '''
+    return None, gr.update(interactive=False), gr.update(interactive=False)
 
 
 # 页面布局
@@ -136,11 +142,17 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
 
 
         # 左侧组件交互
+        # 获取上传/录制的视频保存的地址
         upload_button.click(upload_video, [up_video], [up_video, upload_button, run_button]) 
 
         # 右侧组件交互
-        run_button.click(gradio_answer, [up_video,option,threshold,skipframe], [output_videos])
+        # 清空上一次检测结果
+        run_button.click(clear_answer, [], [output_videos, run_button, clear_button]) 
+        # 开始检测    
+        run_button.click(gradio_answer, [up_video,option,threshold,skipframe], [output_videos, run_button, clear_button])
+        # 跟踪检测进度
         run_button.click(fn=process_data, inputs=[], outputs = progress_output)
+        # 重置状态
         clear_button.click(gradio_reset, [], [output_videos, progress_output, up_video, upload_button, run_button], queue=False)  
 
     gr.Markdown("#### 检测出的视频片段")
