@@ -10,6 +10,8 @@ import time
 import pickle as pkl
 
 MODEL_PATH = "openbmb/MiniCPM-V-2_6-int4"
+LOCAL_FLAG = True # control whether to update model from HuggingFace
+PROGRESS_FILE = "./progress.txt"
 
 # #最大帧数
 MAX_NUM_FRAMES = 3600 # 最大支持分析1小时视频
@@ -51,13 +53,14 @@ class llm():
         self.tokenizer = AutoTokenizer.from_pretrained(
             MODEL_PATH,
             trust_remote_code=True,
-            local_files_only=True
+            local_files_only=LOCAL_FLAG
             # padding_side="left"
-        )
+        )        
         # Load the model
         if args.quant == 4:
             self.model = AutoModelForCausalLM.from_pretrained(
                 MODEL_PATH,
+                local_files_only=LOCAL_FLAG,
                 device_map="cuda:0",
                 torch_dtype=TORCH_TYPE,
                 trust_remote_code=True,
@@ -71,6 +74,7 @@ class llm():
         elif args.quant == 8:
             self.model = AutoModelForCausalLM.from_pretrained(
                 MODEL_PATH,
+                local_files_only=LOCAL_FLAG,
                 torch_dtype=TORCH_TYPE,
                 trust_remote_code=True,
                 cache_dir="/vl/model",
@@ -83,6 +87,7 @@ class llm():
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
                 MODEL_PATH,
+                local_files_only=LOCAL_FLAG,
                 torch_dtype=TORCH_TYPE,
                 cache_dir="/vl/model",
                 trust_remote_code=True
@@ -171,10 +176,7 @@ class llm():
         temperature = 0.5
         lp = 0
         skipframe = int(skipframe)
-        # 记录开始处理视频
-        f = open("./progress.txt","w+")
-        f.write(str(0))
-        f.close()         
+       
         while lp < l:
             prompt_text = f""" 
             下面有任务你需要回答：
@@ -186,7 +188,7 @@ class llm():
             """
             res = self.model_predict(prompt_text, [frames_list[lp]], temperature)
             # 记录视频处理进度
-            f = open("./progress.txt","w+")
+            f = open(PROGRESS_FILE,"w+")
             f.write(str(lp/l))
             f.close()
             if "Yes" in res or "yes" in res:

@@ -3,11 +3,18 @@ import traceback
 
 from inference import llm
 
-
 app = Flask(__name__)
+PROGRESS_FILE = "./progress.txt"
 
 @app.route('/video_qa', methods=['POST'])
 def video_qa():
+    try:
+        f = open(PROGRESS_FILE,"w+")
+        f.write(str(0))
+        f.close()
+    except:
+        return jsonify({"error": traceback.format_exc()}), 500
+
     if 'video' not in request.files:
         return jsonify({'error': 'no video file found'}), 400
 
@@ -43,6 +50,16 @@ def video_qa():
             {"answer": answer})
     except:
         traceback.print_exc()
+        return jsonify({"error": traceback.format_exc()}), 500
+
+@app.route('/video_progress', methods=['GET'])
+def video_progress():
+    try:
+        f = open(PROGRESS_FILE)
+        progress = float(f.read())
+        f.close()
+        return jsonify({"progress": progress})
+    except:
         return jsonify({"error": traceback.format_exc()}), 500
 
 

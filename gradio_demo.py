@@ -4,14 +4,16 @@ import os
 import time
 from helpers import process_video, load_video_data
 
+URL = 'http://localhost:5000'
+POST_INTERVAL = 2
 
 # 大模型AI Agent
 class ChatAgent:
     def __init__(self):
-        pass
+        self.url= URL
 
     def answer(self, video_path, prompt, max_new_tokens, threshold, skipframe):
-        url = 'http://localhost:5000/video_qa'
+        url = self.url + '/video_qa'
         print(video_path)
         files = {'video': open(video_path, 'rb')}
         data = {'question': prompt, 'threshold': threshold,'skipframe':skipframe}
@@ -48,12 +50,13 @@ def gradio_answer(video_path, option, threshold, skipframe):
     视频检测
     '''
     if len(option) == 0 or video_path is None:
-        return option
+        return option, gr.update(interactive=True), gr.update(interactive=True)
     response = agent.answer(video_path=video_path, prompt=option, max_new_tokens=200, threshold=threshold, skipframe=skipframe)
     print(f"Question: {option} Answer: {response}")
 
     # 根据大模型返回的结果，生成视频切片
     seg = process_video(video_path, response)
+    print(f"返回数量为{len(seg)}的片段")
     return seg, gr.update(interactive=True), gr.update(interactive=True)
 
 def gradio_reset():
@@ -73,22 +76,25 @@ def process_data():
     视频处理进度跟踪
     '''
     bar = gr.Progress(track_tqdm=True)
-    f = open("./progress.txt","w+")
-    f.write(str(0))
-    f.close()
     progress = 0
     bar(progress)
+    time.sleep(POST_INTERVAL)
     while progress < 0.9999:
-        # 间歇1秒
-        time.sleep(1)
+        # 间歇
+        time.sleep(POST_INTERVAL)
         try:
-            f = open("./progress.txt","r")
-            progress = float(f.read())
-            f.close()
+            url = URL + '/video_progress'
+            response = requests.get(url)
+            if response.status_code != 200:
+                print(response.json()["error"])
+            else:
+                res = response.json()["progress"]
+                print(res)
+                progress = float(res)   
         except:
             pass
         bar(progress)
-    return "当前进度: 100%"
+    return "当前进度: 100%，需等待视频剪辑"
 
 def clear_answer():
     '''
@@ -98,7 +104,7 @@ def clear_answer():
 
 
 # 页面布局
-with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; height:500px;} #InputVideo {overflow:visible; height:320px;} footer {visibility: none}") as my_demo:
+with gr.Blocks(title="视频检测项目案例", css="#files {height: 150px} #chatbot {overflow:auto; height:500px;} #InputVideo {overflow:visible; height:320px;} footer {visibility: none}") as my_demo:
     with gr.Row(): 
         # 左侧上传视频         
         with gr.Column(scale=2, visible=True) as video_upload:
@@ -138,7 +144,7 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
                     clear_button = gr.Button("🔄清空")
             
             progress_output = gr.Textbox(label="视频检测进度", interactive=False)
-            output_videos = gr.Files(label="视频检测结果", height=200)
+            output_videos = gr.Files(label="视频检测结果", interactive=False, elem_id="files")
 
 
         # 左侧组件交互
@@ -162,7 +168,6 @@ with gr.Blocks(title="视频检测项目案例", css="#chatbot {overflow:auto; h
             if videos and len(videos) != 0:
                 num = len(videos)
                 left = (3 - num % 3) % 3
-                print(f"Padding:{left}")
                 for video in videos:
                     print(video)
                     with gr.Column(scale=1, min_width=300):
