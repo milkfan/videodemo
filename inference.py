@@ -89,6 +89,9 @@ class llm():
             ).eval().to(DEVICE)
     
     def model_predict(self, prompt, video_data, temperature):
+        '''
+        调用大语言模型
+        '''
         strategy = 'chat'
 
         history = []
@@ -117,10 +120,9 @@ class llm():
 
     def predict(self, prompt, video_data, threshold, skipframe):   
         '''
-        video data is cut into frames of length vlength
+        根据用户的输入检测视频
         '''
-        video_data, vlength = encode_video(video_data) 
-        # question = "请判断是否出现写字教学的情况"
+        video_data, vlength = encode_video(video_data)  # 将视频处理为长度为vlength的数组
         prompt2model = f""" 
             ###下面有2类任务：
             type1:统计类任务，你需要根据问题统计数量
@@ -143,15 +145,22 @@ class llm():
             type_ids = re.findall(pattern, resp)
             return int(type_ids[0])
         task = extract_res(res)
+
         if task == 1:
             resp = "统计类任务尚未开发"
         elif task == 2:
-            resp = self.vllm(prompt,video_data,vlength,threshold,skipframe)
+            # 行为检测
+            resp = self.vllm(prompt, video_data, vlength, threshold, skipframe)
         else:
            resp = "请重新描述"
         return resp
     
     def vllm(self, prompt, frames_list, vlength, threshold=5, skipframe=5):
+        '''
+        每隔skipframe帧检测视频中是否出现prompt中的行为，
+        视频格式是长度为vlength的图像列表，
+        要求检测出的行为持续threshold秒
+        '''
         l = len(frames_list)
         per_frame = vlength / l  # 每帧对应的秒数，一般为1
         # print(per_frame)
