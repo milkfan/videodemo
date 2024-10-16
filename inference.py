@@ -14,7 +14,8 @@ LOCAL_FLAG = True # control whether to update model from HuggingFace
 PROGRESS_FILE = "./progress.txt"
 
 # #最大帧数
-MAX_NUM_FRAMES = 3600 # 最大支持分析1小时视频
+# MAX_NUM_FRAMES = 3600 # 最大支持分析1小时视频
+MAX_NUM_FRAMES = 900
 STEP = 1 # 检测精度1秒
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TORCH_TYPE = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.get_device_capability()[

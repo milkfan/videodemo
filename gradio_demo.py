@@ -177,4 +177,4 @@ with gr.Blocks(title="视频检测项目案例", css="#files {height: 150px} #ch
                         gr.Markdown("")
 
 if __name__ == '__main__':
-    my_demo.launch(share=True,server_name="0.0.0.0", server_port=7868)
+    my_demo.launch(share=False,server_name="0.0.0.0", server_port=7868)
